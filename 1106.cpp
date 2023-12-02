@@ -1,66 +1,51 @@
 #include <iostream>
 #include <vector>
 #include <iomanip>
-#include <cstdlib>
 
 using namespace std;
 
-const int MAXN = 305;
-const double EPS = 1e-9;
-
 int N;
-double M[MAXN][MAXN];
-vector<pair<int, int>> races;
-double dp[2 * MAXN][MAXN];
+double prob[301][301], dp[601][301];
+vector<int> tree[601];
 
-double solve(int race, int winner) {
+double solve(int node, int winner) {
+    if (node <= N) return (node == winner) ? 1.0 : 0.0;
+    if (dp[node][winner] > -0.5) return dp[node][winner];
+    double ans = 0.0;
 
-    if (dp[race][winner] > -1.0) {
-        return dp[race][winner];
+    // Modificação na lógica do cálculo
+    for (int i = 1; i <= N; i++) {
+        if (i == winner) continue;  // Evita cálculos desnecessários
+
+        double currentProb = prob[i][winner] * solve(tree[node][0], i) * solve(tree[node][1], winner);
+        ans = max(ans, currentProb);
+        
+        currentProb = prob[winner][i] * solve(tree[node][0], winner) * solve(tree[node][1], i);
+        ans = max(ans, currentProb);
     }
-
-    int racerB = races[race - (N + 1)].first;
-    int racerA = races[race - (N + 1)].second;
-
-    double probA = solve(racerA, winner);
-    double probB = solve(racerB, winner);
-
-    return dp[race][winner] = probA * M[racerA][winner] + probB * M[racerB][winner];
-
+    return dp[node][winner] = ans;
 }
 
 int main() {
-    while (true) {
-        cin >> N;
-
-        if (N == 0) {
-            break;
+    while (cin >> N && N) {
+        for (int i = 1; i <= N; i++) {
+            for (int j = 1; j <= N; j++) {
+                cin >> prob[i][j];
+            }
         }
-
-        for (int i = 0; i < 2 * MAXN; ++i) {
-            for (int j = 0; j < MAXN; ++j) {
+        for (int i = N + 1; i <= 2 * N - 1; i++) {
+            tree[i].clear();
+            int a, b;
+            cin >> a >> b;
+            tree[i].push_back(a);
+            tree[i].push_back(b);
+        }
+        for (int i = 1; i <= 2 * N - 1; i++) {
+            for (int j = 1; j <= N; j++) {
                 dp[i][j] = -1.0;
             }
         }
-
-        for (int i = 1; i <= N; ++i) {
-          for (int j = 1; j <= N; ++j) {
-              cin >> M[i][j];
-          }
-        }
-
-        races.clear();
-
-        for (int i = 0; i < N - 1; ++i) {
-            int A, B;
-            cin >> A >> B;
-            races.push_back({A, B});
-        }
-
-        cout << fixed;
-        cout.precision(6);
-        cout << solve(N + 1, 1) << endl;
+        cout << fixed << setprecision(6) << solve(2 * N - 1, 1) << endl;
     }
-
     return 0;
 }
